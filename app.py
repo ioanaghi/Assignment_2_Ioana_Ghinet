@@ -177,7 +177,9 @@ def consistency_check():
     if over_response:
         return over_response
 
-    consistent, _ = check_consistency(GAME)
+    consistent, info = check_consistency(GAME)
+    if consistent is None:
+        return jsonify({"consistent": None, "error": info})
     return jsonify({"consistent": consistent})
 
 

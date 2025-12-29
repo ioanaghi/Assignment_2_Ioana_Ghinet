@@ -73,5 +73,7 @@ def check_consistency(game) -> Tuple[bool, str]:
     try:
         output = _run_binary(MACE4_BIN, input_path)
         return mace4_model_found(output), output
+    except FileNotFoundError as exc:
+        return None, str(exc)
     except Exception as exc:
         return False, str(exc)

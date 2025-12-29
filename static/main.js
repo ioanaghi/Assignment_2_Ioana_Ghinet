@@ -227,6 +227,12 @@ async function checkConsistency() {
         return;
     }
 
+    if (data.consistent === null) {
+        const details = data.error ? ` (${data.error})` : '';
+        setMessage(`Mace4 is unavailable.${details}`);
+        return;
+    }
+
     if (data.consistent) {
         setMessage('✅ State is consistent with all clues.');
     } else {
