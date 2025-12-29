@@ -4,7 +4,16 @@ def prover9_proved(output: str) -> bool:
 
 def mace4_model_found(output: str) -> bool:
     """Check if Mace4 found a model (consistent)."""
-    # Mace4 usually outputs "Process ... exit (max_models)" or prints models
-    # We look for "Model 1" or explicit exit codes indicating success finding model
-    # Simpler check: logic engines usually print "Model 1" when found.
-    return "Model 1" in output
+    # Mace4 output varies by version; accept common success markers.
+    markers = (
+        "Model 1",
+        "MODEL 1",
+        "MODEL",
+        "Exiting with 1 model",
+        "Exiting with 1 models",
+        "exiting with 1 model",
+        "exiting with 1 models",
+        "Satisfiable",
+        "satisfiable",
+    )
+    return any(marker in output for marker in markers)
