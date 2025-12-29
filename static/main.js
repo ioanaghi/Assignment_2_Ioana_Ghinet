@@ -11,11 +11,6 @@ function getDiff() {
     return select ? select.value : 'easy';
 }
 
-function strictOn() {
-    const checkbox = document.getElementById('strict-mode');
-    return checkbox ? checkbox.checked : true;
-}
-
 async function newGame() {
     setMsg('Creating a fresh board...');
 
@@ -98,7 +93,7 @@ function getClueColor(n) {
     return colors[n] || '#4a4a4a';
 }
 
-async function clickCell(r, c, guess = false) {
+async function clickCell(r, c) {
     const cell = document.getElementById(`c-${r}-${c}`);
     if (!cell || cell.classList.contains('revealed')) return;
     if (cell.classList.contains('flagged')) {
@@ -111,7 +106,7 @@ async function clickCell(r, c, guess = false) {
     const res = await fetch('/api/click', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({r: r, c: c, allow_guess: guess})
+        body: JSON.stringify({r: r, c: c})
     });
     const data = await res.json();
 
@@ -132,15 +127,7 @@ async function clickCell(r, c, guess = false) {
 
     if (data.status === 'blocked') {
         if (data.reason === 'not_provable') {
-            if (strictOn()) {
-                setMsg('Strict mode: move blocked until logic can prove safety.');
-            } else {
-                setMsg('Logic is stuck. You can take a risky move.');
-                const shouldGuess = window.confirm('Logic cannot prove this is safe. Click OK to take a risky move.');
-                if (shouldGuess) {
-                    return clickCell(r, c, true);
-                }
-            }
+            setMsg('Move blocked: Prover9 cannot prove this is safe.');
         } else {
             setMsg(data.message || 'Move blocked.');
         }
