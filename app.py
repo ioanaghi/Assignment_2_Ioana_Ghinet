@@ -90,11 +90,13 @@ def click_cell():
     if (r, c) in GAME.flags:
         return jsonify({"status": "blocked", "message": "Cell is flagged."})
 
+    allow_guess = bool(data.get("allow_guess"))
     safe, _ = prove_safe(GAME, r, c)
-    if not safe:
+    if not safe and not allow_guess:
         return jsonify(
             {
                 "status": "blocked",
+                "reason": "not_provable",
                 "message": "✨ Logic cannot prove this is safe yet.",
             }
         )

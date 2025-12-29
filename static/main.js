@@ -93,7 +93,7 @@ function getClueColor(n) {
     return colors[n] || '#4a4a4a';
 }
 
-async function clickCell(r, c) {
+async function clickCell(r, c, allowGuess = false) {
     const cell = document.getElementById(`c-${r}-${c}`);
     if (!cell || cell.classList.contains('revealed')) return;
     if (cell.classList.contains('flagged')) {
@@ -106,7 +106,7 @@ async function clickCell(r, c) {
     const res = await fetch('/api/click', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({r: r, c: c})
+        body: JSON.stringify({r: r, c: c, allow_guess: allowGuess})
     });
     const data = await res.json();
 
@@ -126,7 +126,15 @@ async function clickCell(r, c) {
     }
 
     if (data.status === 'blocked') {
-        setMessage(data.message || 'Logic cannot prove safety yet.');
+        if (data.reason === 'not_provable') {
+            setMessage('Logic is stuck. You can take a risky move.');
+            const shouldGuess = window.confirm('Logic cannot prove this is safe. Click OK to take a risky move.');
+            if (shouldGuess) {
+                return clickCell(r, c, true);
+            }
+        } else {
+            setMessage(data.message || 'Move blocked.');
+        }
         cell.classList.add('blocked');
         setTimeout(() => cell.classList.remove('blocked'), 300);
         return;
