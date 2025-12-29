@@ -2,27 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MineFOL Prover</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎀 MineFOL - Logic Minesweeper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>MineFOL (2b) - Prover9 Verified</h1>
+        <h1 class="title">🎀 MineFOL</h1>
+        <p class="subtitle">Logic-only Minesweeper powered by Prover9 and Mace4 ✨</p>
 
         <div class="controls">
-            <button onclick="newGame('easy')">New Easy (5x5)</button>
-            <button onclick="newGame('medium')">New Medium (6x6)</button>
-            <button onclick="newGame('hard')">New Hard (7x7)</button>
-        </div>
-
-        <div class="status-bar">
-            <button onclick="getHint()" class="action-btn">Get Hint</button>
-            <button onclick="checkConsistency()" class="action-btn">Check Consistency</button>
-            <span id="message">Select a difficulty to start.</span>
+            <select id="difficulty" aria-label="Select difficulty">
+                <option value="easy">Easy (8x8)</option>
+                <option value="medium">Medium (10x10)</option>
+                <option value="hard">Hard (12x12)</option>
+            </select>
+            <button id="new-game" class="btn-primary">New Game 🎀</button>
+            <button id="hint" class="btn-secondary">Logical Hint ✨</button>
+            <button id="check" class="btn-ghost">Consistency Check 🔎</button>
         </div>
 
         <div id="grid" class="grid"></div>
+        <div id="message" class="message"></div>
+        <div class="legend">Left-click to ask logic, right-click to place a flag. Safe hints show 🌸.</div>
     </div>
-    <script src="/static/main.js"></script>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

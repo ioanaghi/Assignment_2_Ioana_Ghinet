@@ -1,31 +1,47 @@
-from typing import Set, Tuple, List
+from typing import Dict, List, Set, Tuple
 
 
 class GameState:
-    def __init__(self, rows, cols, mines):
+    def __init__(self, rows: int, cols: int, mines: Set[Tuple[int, int]]):
         self.rows = rows
         self.cols = cols
-        self.mines = mines  # Set of (r,c) tuples
-        self.revealed: Set[Tuple[int, int]] = set()
+        self.mines = mines
+        self.revealed: Dict[Tuple[int, int], int] = {}
+        self.flags: Set[Tuple[int, int]] = set()
 
-    def neighbors(self, r, c) -> List[Tuple[int, int]]:
-        neighs = []
-        for dr in [-1, 0, 1]:
-            for dc in [-1, 0, 1]:
-                if dr == 0 and dc == 0: continue
+    def in_bounds(self, r: int, c: int) -> bool:
+        return 0 <= r < self.rows and 0 <= c < self.cols
+
+    def neighbors(self, r: int, c: int) -> List[Tuple[int, int]]:
+        neighs: List[Tuple[int, int]] = []
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                if dr == 0 and dc == 0:
+                    continue
                 nr, nc = r + dr, c + dc
-                if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                if self.in_bounds(nr, nc):
                     neighs.append((nr, nc))
         return neighs
 
-    def clue_number(self, r, c) -> int:
-        # Calculate clue based on ground truth mines
+    def clue_number(self, r: int, c: int) -> int:
         count = 0
         for nr, nc in self.neighbors(r, c):
             if (nr, nc) in self.mines:
                 count += 1
         return count
 
-    def reveal(self, r, c) -> int:
-        self.revealed.add((r, c))
-        return self.clue_number(r, c)
+    def reveal(self, r: int, c: int) -> int:
+        clue = self.clue_number(r, c)
+        self.revealed[(r, c)] = clue
+        if (r, c) in self.flags:
+            self.flags.remove((r, c))
+        return clue
+
+    def toggle_flag(self, r: int, c: int) -> bool:
+        if (r, c) in self.revealed:
+            return False
+        if (r, c) in self.flags:
+            self.flags.remove((r, c))
+            return False
+        self.flags.add((r, c))
+        return True

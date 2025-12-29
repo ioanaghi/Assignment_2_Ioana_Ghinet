@@ -1,22 +1,191 @@
-body { font-family: sans-serif; background: #f0f0f0; text-align: center; }
-.container { margin-top: 20px; }
-.controls, .status-bar { margin: 15px 0; }
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Quicksand:wght@400;600&display=swap');
+
+:root {
+    --pink: #ffd1dc;
+    --lavender: #e6e6fa;
+    --mint: #d8f5e2;
+    --peach: #ffe9d6;
+    --rose: #ff85a2;
+    --ink: #5d4157;
+    --cell-size: 42px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Quicksand', 'Segoe UI', sans-serif;
+    color: var(--ink);
+    background: radial-gradient(circle at top, #fff5f8 0%, #fef1ff 35%, #f2fff9 100%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.container {
+    width: min(920px, 92vw);
+    margin: 32px auto 48px;
+    padding: 28px 32px 36px;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 28px;
+    box-shadow: 0 20px 40px rgba(93, 65, 87, 0.15);
+    backdrop-filter: blur(6px);
+}
+
+.title {
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.subtitle {
+    margin: 6px 0 18px;
+    font-size: 1rem;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+}
+
+select,
+button {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+button:hover,
+select:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(93, 65, 87, 0.18);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+.btn-primary {
+    background: var(--rose);
+    color: #fff;
+}
+
+.btn-secondary {
+    background: var(--lavender);
+    color: var(--ink);
+}
+
+.btn-ghost {
+    background: var(--mint);
+    color: #2e7d64;
+}
+
+select {
+    background: #fff;
+    color: var(--ink);
+    padding-right: 32px;
+}
+
 .grid {
-    display: inline-grid;
-    gap: 2px;
-    background: #999;
-    padding: 5px;
-    border-radius: 4px;
+    display: grid;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--pink), var(--lavender));
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
 }
+
 .cell {
-    width: 40px; height: 40px;
-    background: #ccc;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-weight: bold;
-    user-select: none;
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: 12px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.25s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 8px rgba(93, 65, 87, 0.12);
 }
-.cell.revealed { background: #fff; cursor: default; }
-.cell.mine-flag { background: #ffcccc; border: 2px solid red; }
-.cell.safe-hint { background: #ccffcc; border: 2px solid green; }
-.action-btn { background: #007bff; color: white; border: none; padding: 5px 10px; cursor: pointer; }
-.action-btn:hover { background: #0056b3; }
+
+.cell:hover {
+    background: #fff0f6;
+    transform: translateY(-1px);
+}
+
+.cell.revealed {
+    background: var(--mint);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+    cursor: default;
+    animation: pop 0.18s ease-out;
+}
+
+.cell.flagged {
+    background: #fff0f6;
+    color: #c43d6b;
+}
+
+.cell.safe-hint {
+    background: #fff8d7;
+    box-shadow: 0 0 0 2px rgba(255, 196, 204, 0.6);
+}
+
+.cell.blocked {
+    background: #ffd5d5;
+    animation: shake 0.3s ease;
+}
+
+.message {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(93, 65, 87, 0.12);
+    text-align: center;
+    min-height: 44px;
+}
+
+.legend {
+    margin-top: 14px;
+    font-size: 0.9rem;
+    text-align: center;
+    color: #6a546a;
+}
+
+@keyframes pop {
+    0% { transform: scale(0.92); }
+    100% { transform: scale(1); }
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    30% { transform: translateX(-3px); }
+    60% { transform: translateX(3px); }
+    100% { transform: translateX(0); }
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 22px 18px 28px;
+    }
+
+    .controls {
+        flex-direction: column;
+    }
+}

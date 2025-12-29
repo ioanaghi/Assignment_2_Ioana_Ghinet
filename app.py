@@ -1,105 +1,133 @@
-from flask import Flask, render_template, jsonify, request
-from game.state import GameState
+from flask import Flask, jsonify, render_template, request
+
 from game.generator import generate_game
-from game.hints import find_hint
-from logic.runner import prove_safe, mace_consistent
+from logic.runner import check_consistency, prove_safe
 
 app = Flask(__name__)
 
-current_game: GameState | None = None
+GAME = None
+DIFFICULTIES = {
+    "easy": (8, 8, 10),
+    "medium": (10, 10, 18),
+    "hard": (12, 12, 30),
+}
 
 
-@app.route('/')
+def _require_game():
+    if GAME is None:
+        return jsonify({"error": "No active game."}), 400
+    return None
+
+
+def _serialize_revealed(game):
+    return [
+        {"r": r, "c": c, "clue": clue}
+        for (r, c), clue in sorted(game.revealed.items())
+    ]
+
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/api/new_game', methods=['POST'])
+@app.route("/api/new_game", methods=["POST"])
 def new_game():
-    global current_game
-    data = request.json
-    difficulty = data.get('difficulty', 'easy')
+    data = request.get_json(silent=True) or {}
+    diff = data.get("difficulty", "easy")
+    rows, cols, mines = DIFFICULTIES.get(diff, DIFFICULTIES["easy"])
 
-    if difficulty == 'hard':
-        rows, cols, mines = 7, 7, 12  # Slightly adjusted for balance
-    elif difficulty == 'medium':
-        rows, cols, mines = 6, 6, 6
-    else:  # easy
-        rows, cols, mines = 5, 5, 3
+    global GAME
+    GAME = generate_game(rows, cols, mines)
 
-    current_game = generate_game(rows, cols, mines)
-
-    # Convert revealed set to list for JSON
-    revealed_list = []
-    for (r, c) in current_game.revealed:
-        revealed_list.append({
-            "r": r,
-            "c": c,
-            "clue": current_game.clue_number(r, c)
-        })
-
-    return jsonify({
-        "status": "ok",
-        "rows": rows,
-        "cols": cols,
-        "mines_total": mines,
-        "revealed": revealed_list
-    })
+    return jsonify(
+        {
+            "rows": GAME.rows,
+            "cols": GAME.cols,
+            "mines_total": len(GAME.mines),
+            "revealed": _serialize_revealed(GAME),
+        }
+    )
 
 
-@app.route('/api/click', methods=['POST'])
+@app.route("/api/click", methods=["POST"])
 def click_cell():
-    global current_game
-    if not current_game:
-        return jsonify({"error": "No game started"}), 400
+    if GAME is None:
+        return _require_game()
 
-    data = request.json
-    r, c = int(data.get('r')), int(data.get('c'))
+    data = request.get_json(silent=True) or {}
+    r = data.get("r")
+    c = data.get("c")
 
-    if (r, c) in current_game.revealed:
-        return jsonify({"status": "already_revealed"})
+    if r is None or c is None:
+        return jsonify({"error": "Missing coordinates."}), 400
 
-    # LOGIC CHECK: Can we prove it is Safe?
-    # We ignore the logic check if the game is somehow in an invalid state,
-    # but strictly per requirements: "cannot go in cells for which Prover9 fails"
-    is_safe_proven, output = prove_safe(current_game, r, c)
+    if (r, c) in GAME.revealed:
+        return jsonify({"status": "already"})
 
-    if is_safe_proven:
-        clue = current_game.reveal(r, c)
-        return jsonify({
-            "status": "safe",
-            "clue": clue,
-            "r": r, "c": c
-        })
-    else:
-        # Check if it was actually safe (ground truth) just for debugging/message
-        # But we MUST block the move.
-        return jsonify({
-            "status": "blocked",
-            "message": "Move blocked! Prover9 could not prove this cell is safe."
-        })
+    if (r, c) in GAME.flags:
+        return jsonify({"status": "blocked", "message": "Cell is flagged."})
 
+    safe, _ = prove_safe(GAME, r, c)
+    if not safe:
+        return jsonify(
+            {
+                "status": "blocked",
+                "message": "✨ Logic cannot prove this is safe yet.",
+            }
+        )
 
-@app.route('/api/hint', methods=['POST'])
-def get_hint():
-    global current_game
-    if not current_game:
-        return jsonify({"error": "No game started"}), 400
+    if (r, c) in GAME.mines:
+        return jsonify({"status": "boom", "message": "Mine hit."})
 
-    # Logic-based hint
-    hint = find_hint(current_game)
-    return jsonify(hint)
+    clue = GAME.reveal(r, c)
+    return jsonify({"status": "safe", "r": r, "c": c, "clue": clue})
 
 
-@app.route('/api/check', methods=['POST'])
-def check_consistency():
-    global current_game
-    if not current_game:
-        return jsonify({"error": "No game started"}), 400
+@app.route("/api/flag", methods=["POST"])
+def toggle_flag():
+    if GAME is None:
+        return _require_game()
 
-    is_consistent, _ = mace_consistent(current_game)
-    return jsonify({"consistent": is_consistent})
+    data = request.get_json(silent=True) or {}
+    r = data.get("r")
+    c = data.get("c")
+
+    if r is None or c is None:
+        return jsonify({"error": "Missing coordinates."}), 400
+
+    flagged = GAME.toggle_flag(r, c)
+    return jsonify({"r": r, "c": c, "flagged": flagged})
 
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+@app.route("/api/hint", methods=["POST"])
+def hint():
+    if GAME is None:
+        return _require_game()
+
+    safe_cells = []
+    for r in range(GAME.rows):
+        for c in range(GAME.cols):
+            if (r, c) in GAME.revealed or (r, c) in GAME.flags:
+                continue
+            safe, _ = prove_safe(GAME, r, c)
+            if safe:
+                safe_cells.append({"r": r, "c": c})
+
+    if safe_cells:
+        return jsonify({"type": "safe", "cells": safe_cells})
+
+    return jsonify({"type": "none", "message": "No provably safe cells."})
+
+
+@app.route("/api/check", methods=["POST"])
+def consistency_check():
+    if GAME is None:
+        return _require_game()
+
+    consistent, _ = check_consistency(GAME)
+    return jsonify({"consistent": consistent})
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
