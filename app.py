@@ -19,18 +19,18 @@ def _require_game():
     return None
 
 
-def _serialize_revealed(game):
+def _pack_revealed(game):
     return [
         {"r": r, "c": c, "clue": clue}
         for (r, c), clue in sorted(game.revealed.items())
     ]
 
 
-def _serialize_mines(game):
+def _pack_mines(game):
     return [{"r": r, "c": c} for r, c in sorted(game.mines)]
 
 
-def _block_if_over(game):
+def _stop_if_over(game):
     if game.game_over:
         return (
             jsonify(
@@ -64,7 +64,7 @@ def new_game():
             "rows": GAME.rows,
             "cols": GAME.cols,
             "mines_total": len(GAME.mines),
-            "revealed": _serialize_revealed(GAME),
+            "revealed": _pack_revealed(GAME),
         }
     )
 
@@ -73,9 +73,9 @@ def new_game():
 def click_cell():
     if GAME is None:
         return _require_game()
-    over_response = _block_if_over(GAME)
-    if over_response:
-        return over_response
+    over = _stop_if_over(GAME)
+    if over:
+        return over
 
     data = request.get_json(silent=True) or {}
     r = data.get("r")
@@ -90,9 +90,9 @@ def click_cell():
     if (r, c) in GAME.flags:
         return jsonify({"status": "blocked", "message": "Cell is flagged."})
 
-    allow_guess = bool(data.get("allow_guess"))
+    guess = bool(data.get("allow_guess"))
     safe, _ = prove_safe(GAME, r, c)
-    if not safe and not allow_guess:
+    if not safe and not guess:
         return jsonify(
             {
                 "status": "blocked",
@@ -109,7 +109,7 @@ def click_cell():
                 "message": "Mine hit.",
                 "game_over": True,
                 "outcome": GAME.outcome,
-                "mines": _serialize_mines(GAME),
+                "mines": _pack_mines(GAME),
             }
         )
 
@@ -131,9 +131,9 @@ def click_cell():
 def toggle_flag():
     if GAME is None:
         return _require_game()
-    over_response = _block_if_over(GAME)
-    if over_response:
-        return over_response
+    over = _stop_if_over(GAME)
+    if over:
+        return over
 
     data = request.get_json(silent=True) or {}
     r = data.get("r")
@@ -150,9 +150,9 @@ def toggle_flag():
 def hint():
     if GAME is None:
         return _require_game()
-    over_response = _block_if_over(GAME)
-    if over_response:
-        return over_response
+    over = _stop_if_over(GAME)
+    if over:
+        return over
 
     safe_cells = []
     for r in range(GAME.rows):
@@ -173,9 +173,9 @@ def hint():
 def consistency_check():
     if GAME is None:
         return _require_game()
-    over_response = _block_if_over(GAME)
-    if over_response:
-        return over_response
+    over = _stop_if_over(GAME)
+    if over:
+        return over
 
     consistent, info = check_consistency(GAME)
     if consistent is None:

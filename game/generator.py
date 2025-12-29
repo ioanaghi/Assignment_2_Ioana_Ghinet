@@ -13,7 +13,7 @@ def generate_game(rows: int, cols: int, num_mines: int) -> GameState:
 
     safe_cells = [p for p in all_cells if p not in mine_locs]
     if safe_cells:
-        zeros = [p for p in safe_cells if game.clue_number(p[0], p[1]) == 0]
+        zeros = [p for p in safe_cells if game.clue(p[0], p[1]) == 0]
         if zeros:
             start_r, start_c = random.choice(zeros)
         else:

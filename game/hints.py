@@ -12,7 +12,7 @@ def find_hint(game):
     # Prioritize neighbors of revealed cells for efficiency
     candidates = set()
     for (rr, rc) in game.revealed:
-        for n in game.neighbors(rr, rc):
+        for n in game.neigh(rr, rc):
             if n not in game.revealed:
                 candidates.add(n)
 

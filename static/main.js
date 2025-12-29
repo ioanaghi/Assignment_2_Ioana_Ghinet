@@ -1,28 +1,28 @@
 let rows = 0;
 let cols = 0;
 
-function setMessage(text) {
+function setMsg(text) {
     const el = document.getElementById('message');
     if (el) el.textContent = text;
 }
 
-function getDifficulty() {
+function getDiff() {
     const select = document.getElementById('difficulty');
     return select ? select.value : 'easy';
 }
 
-function isStrictMode() {
+function strictOn() {
     const checkbox = document.getElementById('strict-mode');
     return checkbox ? checkbox.checked : true;
 }
 
 async function newGame() {
-    setMessage('Creating a fresh board...');
+    setMsg('Creating a fresh board...');
 
     const res = await fetch('/api/new_game', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({difficulty: getDifficulty()})
+        body: JSON.stringify({difficulty: getDiff()})
     });
     const data = await res.json();
 
@@ -30,7 +30,7 @@ async function newGame() {
     cols = data.cols;
 
     renderGrid(rows, cols);
-    setMessage(`New game ready. Mines hidden: ${data.mines_total}.`);
+    setMsg(`New game ready. Mines hidden: ${data.mines_total}.`);
 
     if (data.revealed) {
         data.revealed.forEach(cell => {
@@ -73,7 +73,7 @@ function updateCell(r, c, clue) {
     cell.style.color = getClueColor(clue);
 }
 
-function revealMines(mines) {
+function showMines(mines) {
     mines.forEach(cell => {
         const el = document.getElementById(`c-${cell.r}-${cell.c}`);
         if (el && !el.classList.contains('revealed')) {
@@ -83,13 +83,13 @@ function revealMines(mines) {
     });
 }
 
-function setGameOver(outcome) {
+function endGame(outcome) {
     const grid = document.getElementById('grid');
     grid.classList.add('disabled');
     if (outcome === 'win') {
-        setMessage('🎉 You solved the board! Logic wins.');
+        setMsg('🎉 You solved the board! Logic wins.');
     } else if (outcome === 'lose') {
-        setMessage('💔 Game over. Try again with a new board.');
+        setMsg('💔 Game over. Try again with a new board.');
     }
 }
 
@@ -98,51 +98,51 @@ function getClueColor(n) {
     return colors[n] || '#4a4a4a';
 }
 
-async function clickCell(r, c, allowGuess = false) {
+async function clickCell(r, c, guess = false) {
     const cell = document.getElementById(`c-${r}-${c}`);
     if (!cell || cell.classList.contains('revealed')) return;
     if (cell.classList.contains('flagged')) {
-        setMessage('Cell is flagged. Remove the flag first.');
+        setMsg('Cell is flagged. Remove the flag first.');
         return;
     }
 
-    setMessage(`Checking (${r}, ${c}) with Prover9...`);
+    setMsg(`Checking (${r}, ${c}) with Prover9...`);
 
     const res = await fetch('/api/click', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({r: r, c: c, allow_guess: allowGuess})
+        body: JSON.stringify({r: r, c: c, allow_guess: guess})
     });
     const data = await res.json();
 
     if (data.status === 'over') {
-        setGameOver(data.outcome);
+        endGame(data.outcome);
         return;
     }
 
     if (data.status === 'safe') {
         updateCell(data.r, data.c, data.clue);
         if (data.game_over) {
-            setGameOver(data.outcome);
+            endGame(data.outcome);
         } else {
-            setMessage('🌸 Safe and proven by logic!');
+            setMsg('🌸 Safe and proven by logic!');
         }
         return;
     }
 
     if (data.status === 'blocked') {
         if (data.reason === 'not_provable') {
-            if (isStrictMode()) {
-                setMessage('Strict mode: move blocked until logic can prove safety.');
+            if (strictOn()) {
+                setMsg('Strict mode: move blocked until logic can prove safety.');
             } else {
-                setMessage('Logic is stuck. You can take a risky move.');
+                setMsg('Logic is stuck. You can take a risky move.');
                 const shouldGuess = window.confirm('Logic cannot prove this is safe. Click OK to take a risky move.');
                 if (shouldGuess) {
                     return clickCell(r, c, true);
                 }
             }
         } else {
-            setMessage(data.message || 'Move blocked.');
+            setMsg(data.message || 'Move blocked.');
         }
         cell.classList.add('blocked');
         setTimeout(() => cell.classList.remove('blocked'), 300);
@@ -153,9 +153,9 @@ async function clickCell(r, c, allowGuess = false) {
         cell.classList.add('revealed');
         cell.textContent = '💥';
         if (data.mines) {
-            revealMines(data.mines);
+            showMines(data.mines);
         }
-        setGameOver(data.outcome);
+        endGame(data.outcome);
     }
 }
 
@@ -171,7 +171,7 @@ async function toggleFlag(r, c) {
     const data = await res.json();
 
     if (data.status === 'over') {
-        setGameOver(data.outcome);
+        endGame(data.outcome);
         return;
     }
 
@@ -185,7 +185,7 @@ async function toggleFlag(r, c) {
 }
 
 async function getHint() {
-    setMessage('✨ Searching for provably safe cells...');
+    setMsg('✨ Searching for provably safe cells...');
     const res = await fetch('/api/hint', { method: 'POST' });
     const data = await res.json();
 
@@ -197,7 +197,7 @@ async function getHint() {
     });
 
     if (data.status === 'over') {
-        setGameOver(data.outcome);
+        endGame(data.outcome);
         return;
     }
 
@@ -211,32 +211,32 @@ async function getHint() {
                 }
             }
         });
-        setMessage(`✨ ${data.cells.length} safe cell(s) highlighted.`);
+        setMsg(`✨ ${data.cells.length} safe cell(s) highlighted.`);
     } else {
-        setMessage(data.message || 'No logic hints available.');
+        setMsg(data.message || 'No logic hints available.');
     }
 }
 
 async function checkConsistency() {
-    setMessage('Checking consistency with Mace4...');
+    setMsg('Checking consistency with Mace4...');
     const res = await fetch('/api/check', { method: 'POST' });
     const data = await res.json();
 
     if (data.status === 'over') {
-        setGameOver(data.outcome);
+        endGame(data.outcome);
         return;
     }
 
     if (data.consistent === null) {
         const details = data.error ? ` (${data.error})` : '';
-        setMessage(`Mace4 is unavailable.${details}`);
+        setMsg(`Mace4 is unavailable.${details}`);
         return;
     }
 
     if (data.consistent) {
-        setMessage('✅ State is consistent with all clues.');
+        setMsg('✅ State is consistent with all clues.');
     } else {
-        setMessage('⚠️ Flags contradict the revealed numbers.');
+        setMsg('⚠️ Flags contradict the revealed numbers.');
     }
 }
 

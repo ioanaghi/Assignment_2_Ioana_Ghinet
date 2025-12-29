@@ -14,7 +14,7 @@ class GameState:
     def in_bounds(self, r: int, c: int) -> bool:
         return 0 <= r < self.rows and 0 <= c < self.cols
 
-    def neighbors(self, r: int, c: int) -> List[Tuple[int, int]]:
+    def neigh(self, r: int, c: int) -> List[Tuple[int, int]]:
         neighs: List[Tuple[int, int]] = []
         for dr in (-1, 0, 1):
             for dc in (-1, 0, 1):
@@ -25,19 +25,19 @@ class GameState:
                     neighs.append((nr, nc))
         return neighs
 
-    def clue_number(self, r: int, c: int) -> int:
+    def clue(self, r: int, c: int) -> int:
         count = 0
-        for nr, nc in self.neighbors(r, c):
+        for nr, nc in self.neigh(r, c):
             if (nr, nc) in self.mines:
                 count += 1
         return count
 
     def reveal(self, r: int, c: int) -> int:
-        clue = self.clue_number(r, c)
-        self.revealed[(r, c)] = clue
+        num = self.clue(r, c)
+        self.revealed[(r, c)] = num
         if (r, c) in self.flags:
             self.flags.remove((r, c))
-        return clue
+        return num
 
     def safe_cells_total(self) -> int:
         return self.rows * self.cols - len(self.mines)
