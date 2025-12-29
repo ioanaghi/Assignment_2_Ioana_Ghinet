@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MineFOL Prover</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>MineFOL (2b) - Prover9 Verified</h1>
+
+        <div class="controls">
+            <button onclick="newGame('easy')">New Easy (5x5)</button>
+            <button onclick="newGame('medium')">New Medium (6x6)</button>
+            <button onclick="newGame('hard')">New Hard (7x7)</button>
+        </div>
+
+        <div class="status-bar">
+            <button onclick="getHint()" class="action-btn">Get Hint</button>
+            <button onclick="checkConsistency()" class="action-btn">Check Consistency</button>
+            <span id="message">Select a difficulty to start.</span>
+        </div>
+
+        <div id="grid" class="grid"></div>
+    </div>
+    <script src="/static/main.js"></script>
+</body>
+</html>

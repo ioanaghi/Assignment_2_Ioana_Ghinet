@@ -1,0 +1,8 @@
+assign(max_seconds, 2).
+assign(max_models, 1).
+set(print_models).
+
+formulas(assumptions).
+all x ( Safe(x) <-> -Mine(x) ).
+%%STATE_AXIOMS%%
+end_of_list.

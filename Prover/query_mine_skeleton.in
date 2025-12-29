@@ -1,0 +1,12 @@
+set(auto).
+assign(max_seconds, 2).
+assign(max_proofs, 1).
+
+formulas(assumptions).
+all x ( Safe(x) <-> -Mine(x) ).
+%%STATE_AXIOMS%%
+end_of_list.
+
+formulas(goals).
+%%GOAL%%
+end_of_list.

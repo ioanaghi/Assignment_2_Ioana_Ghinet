@@ -1,0 +1,22 @@
+body { font-family: sans-serif; background: #f0f0f0; text-align: center; }
+.container { margin-top: 20px; }
+.controls, .status-bar { margin: 15px 0; }
+.grid {
+    display: inline-grid;
+    gap: 2px;
+    background: #999;
+    padding: 5px;
+    border-radius: 4px;
+}
+.cell {
+    width: 40px; height: 40px;
+    background: #ccc;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-weight: bold;
+    user-select: none;
+}
+.cell.revealed { background: #fff; cursor: default; }
+.cell.mine-flag { background: #ffcccc; border: 2px solid red; }
+.cell.safe-hint { background: #ccffcc; border: 2px solid green; }
+.action-btn { background: #007bff; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+.action-btn:hover { background: #0056b3; }

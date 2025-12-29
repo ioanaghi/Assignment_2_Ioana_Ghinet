@@ -1,0 +1,5 @@
+% base_axioms.in
+% Minimal shared axioms for MineFOL
+
+% Optional: show we treat Safe as "not a mine"
+all x ( Safe(x) <-> -Mine(x) ).
