@@ -11,6 +11,11 @@ function getDifficulty() {
     return select ? select.value : 'easy';
 }
 
+function isStrictMode() {
+    const checkbox = document.getElementById('strict-mode');
+    return checkbox ? checkbox.checked : true;
+}
+
 async function newGame() {
     setMessage('Creating a fresh board...');
 
@@ -127,10 +132,14 @@ async function clickCell(r, c, allowGuess = false) {
 
     if (data.status === 'blocked') {
         if (data.reason === 'not_provable') {
-            setMessage('Logic is stuck. You can take a risky move.');
-            const shouldGuess = window.confirm('Logic cannot prove this is safe. Click OK to take a risky move.');
-            if (shouldGuess) {
-                return clickCell(r, c, true);
+            if (isStrictMode()) {
+                setMessage('Strict mode: move blocked until logic can prove safety.');
+            } else {
+                setMessage('Logic is stuck. You can take a risky move.');
+                const shouldGuess = window.confirm('Logic cannot prove this is safe. Click OK to take a risky move.');
+                if (shouldGuess) {
+                    return clickCell(r, c, true);
+                }
             }
         } else {
             setMessage(data.message || 'Move blocked.');
