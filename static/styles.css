@@ -108,6 +108,12 @@ select {
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
 }
 
+.grid.disabled {
+    pointer-events: none;
+    opacity: 0.7;
+    filter: grayscale(0.1);
+}
+
 .cell {
     width: var(--cell-size);
     height: var(--cell-size);

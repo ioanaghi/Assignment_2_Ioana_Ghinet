@@ -37,6 +37,7 @@ async function newGame() {
 function renderGrid(r, c) {
     const grid = document.getElementById('grid');
     grid.style.gridTemplateColumns = `repeat(${c}, var(--cell-size))`;
+    grid.classList.remove('disabled');
     grid.innerHTML = '';
 
     const size = Math.max(32, Math.min(48, Math.floor(360 / c)));
@@ -67,6 +68,26 @@ function updateCell(r, c, clue) {
     cell.style.color = getClueColor(clue);
 }
 
+function revealMines(mines) {
+    mines.forEach(cell => {
+        const el = document.getElementById(`c-${cell.r}-${cell.c}`);
+        if (el && !el.classList.contains('revealed')) {
+            el.classList.add('revealed');
+            el.textContent = '💣';
+        }
+    });
+}
+
+function setGameOver(outcome) {
+    const grid = document.getElementById('grid');
+    grid.classList.add('disabled');
+    if (outcome === 'win') {
+        setMessage('🎉 You solved the board! Logic wins.');
+    } else if (outcome === 'lose') {
+        setMessage('💔 Game over. Try again with a new board.');
+    }
+}
+
 function getClueColor(n) {
     const colors = ['#4a4a4a', '#3a6ea5', '#2e8b57', '#d35400', '#8e44ad', '#8b4513', '#16a085', '#2c3e50', '#7f8c8d'];
     return colors[n] || '#4a4a4a';
@@ -89,9 +110,18 @@ async function clickCell(r, c) {
     });
     const data = await res.json();
 
+    if (data.status === 'over') {
+        setGameOver(data.outcome);
+        return;
+    }
+
     if (data.status === 'safe') {
         updateCell(data.r, data.c, data.clue);
-        setMessage('🌸 Safe and proven by logic!');
+        if (data.game_over) {
+            setGameOver(data.outcome);
+        } else {
+            setMessage('🌸 Safe and proven by logic!');
+        }
         return;
     }
 
@@ -103,9 +133,12 @@ async function clickCell(r, c) {
     }
 
     if (data.status === 'boom') {
-        setMessage('That was a mine.');
         cell.classList.add('revealed');
         cell.textContent = '💥';
+        if (data.mines) {
+            revealMines(data.mines);
+        }
+        setGameOver(data.outcome);
     }
 }
 
@@ -119,6 +152,11 @@ async function toggleFlag(r, c) {
         body: JSON.stringify({r: r, c: c})
     });
     const data = await res.json();
+
+    if (data.status === 'over') {
+        setGameOver(data.outcome);
+        return;
+    }
 
     if (data.flagged) {
         cell.classList.add('flagged');
@@ -141,6 +179,11 @@ async function getHint() {
         }
     });
 
+    if (data.status === 'over') {
+        setGameOver(data.outcome);
+        return;
+    }
+
     if (data.type === 'safe') {
         data.cells.forEach(cell => {
             const el = document.getElementById(`c-${cell.r}-${cell.c}`);
@@ -161,6 +204,11 @@ async function checkConsistency() {
     setMessage('Checking consistency with Mace4...');
     const res = await fetch('/api/check', { method: 'POST' });
     const data = await res.json();
+
+    if (data.status === 'over') {
+        setGameOver(data.outcome);
+        return;
+    }
 
     if (data.consistent) {
         setMessage('✅ State is consistent with all clues.');

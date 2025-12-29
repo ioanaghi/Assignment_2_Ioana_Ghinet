@@ -8,6 +8,8 @@ class GameState:
         self.mines = mines
         self.revealed: Dict[Tuple[int, int], int] = {}
         self.flags: Set[Tuple[int, int]] = set()
+        self.game_over = False
+        self.outcome = None  # "win" or "lose"
 
     def in_bounds(self, r: int, c: int) -> bool:
         return 0 <= r < self.rows and 0 <= c < self.cols
@@ -36,6 +38,20 @@ class GameState:
         if (r, c) in self.flags:
             self.flags.remove((r, c))
         return clue
+
+    def safe_cells_total(self) -> int:
+        return self.rows * self.cols - len(self.mines)
+
+    def check_win(self) -> bool:
+        if len(self.revealed) >= self.safe_cells_total():
+            self.game_over = True
+            self.outcome = "win"
+            return True
+        return False
+
+    def mark_loss(self):
+        self.game_over = True
+        self.outcome = "lose"
 
     def toggle_flag(self, r: int, c: int) -> bool:
         if (r, c) in self.revealed:

@@ -26,6 +26,25 @@ def _serialize_revealed(game):
     ]
 
 
+def _serialize_mines(game):
+    return [{"r": r, "c": c} for r, c in sorted(game.mines)]
+
+
+def _block_if_over(game):
+    if game.game_over:
+        return (
+            jsonify(
+                {
+                    "status": "over",
+                    "outcome": game.outcome,
+                    "message": "Game is already over.",
+                }
+            ),
+            400,
+        )
+    return None
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -54,6 +73,9 @@ def new_game():
 def click_cell():
     if GAME is None:
         return _require_game()
+    over_response = _block_if_over(GAME)
+    if over_response:
+        return over_response
 
     data = request.get_json(silent=True) or {}
     r = data.get("r")
@@ -78,16 +100,38 @@ def click_cell():
         )
 
     if (r, c) in GAME.mines:
-        return jsonify({"status": "boom", "message": "Mine hit."})
+        GAME.mark_loss()
+        return jsonify(
+            {
+                "status": "boom",
+                "message": "Mine hit.",
+                "game_over": True,
+                "outcome": GAME.outcome,
+                "mines": _serialize_mines(GAME),
+            }
+        )
 
     clue = GAME.reveal(r, c)
-    return jsonify({"status": "safe", "r": r, "c": c, "clue": clue})
+    won = GAME.check_win()
+    return jsonify(
+        {
+            "status": "safe",
+            "r": r,
+            "c": c,
+            "clue": clue,
+            "game_over": won,
+            "outcome": GAME.outcome,
+        }
+    )
 
 
 @app.route("/api/flag", methods=["POST"])
 def toggle_flag():
     if GAME is None:
         return _require_game()
+    over_response = _block_if_over(GAME)
+    if over_response:
+        return over_response
 
     data = request.get_json(silent=True) or {}
     r = data.get("r")
@@ -104,6 +148,9 @@ def toggle_flag():
 def hint():
     if GAME is None:
         return _require_game()
+    over_response = _block_if_over(GAME)
+    if over_response:
+        return over_response
 
     safe_cells = []
     for r in range(GAME.rows):
@@ -124,6 +171,9 @@ def hint():
 def consistency_check():
     if GAME is None:
         return _require_game()
+    over_response = _block_if_over(GAME)
+    if over_response:
+        return over_response
 
     consistent, _ = check_consistency(GAME)
     return jsonify({"consistent": consistent})
