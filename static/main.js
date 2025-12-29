@@ -240,9 +240,38 @@ async function checkConsistency() {
     }
 }
 
+async function autoSolve() {
+    setMsg('Solving what logic can prove...');
+    const res = await fetch('/api/solve', { method: 'POST' });
+    const data = await res.json();
+
+    if (data.status === 'over') {
+        endGame(data.outcome);
+        return;
+    }
+
+    if (data.cells) {
+        data.cells.forEach(cell => {
+            updateCell(cell.r, cell.c, cell.clue);
+        });
+    }
+
+    if (data.game_over) {
+        endGame(data.outcome);
+        return;
+    }
+
+    if (data.status === 'stuck') {
+        setMsg('Solver is stuck. No more provably safe cells.');
+    } else {
+        setMsg('Solver revealed all provably safe cells.');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('new-game').addEventListener('click', newGame);
     document.getElementById('hint').addEventListener('click', getHint);
+    document.getElementById('solve').addEventListener('click', autoSolve);
     document.getElementById('check').addEventListener('click', checkConsistency);
     document.getElementById('difficulty').addEventListener('change', newGame);
     newGame();

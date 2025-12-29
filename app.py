@@ -183,5 +183,47 @@ def consistency_check():
     return jsonify({"consistent": consistent})
 
 
+@app.route("/api/solve", methods=["POST"])
+def solve_board():
+    if GAME is None:
+        return _require_game()
+    over = _stop_if_over(GAME)
+    if over:
+        return over
+
+    new_cells = []
+    progress = True
+    while progress:
+        progress = False
+        for r in range(GAME.rows):
+            for c in range(GAME.cols):
+                if (r, c) in GAME.revealed or (r, c) in GAME.flags:
+                    continue
+                safe, _ = prove_safe(GAME, r, c)
+                if safe:
+                    clue = GAME.reveal(r, c)
+                    new_cells.append({"r": r, "c": c, "clue": clue})
+                    progress = True
+        if GAME.check_win():
+            return jsonify(
+                {
+                    "status": "done",
+                    "cells": new_cells,
+                    "game_over": True,
+                    "outcome": GAME.outcome,
+                }
+            )
+
+    status = "stuck" if not new_cells else "progress"
+    return jsonify(
+        {
+            "status": status,
+            "cells": new_cells,
+            "game_over": GAME.game_over,
+            "outcome": GAME.outcome,
+        }
+    )
+
+
 if __name__ == "__main__":
     app.run(debug=True)
