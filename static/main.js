@@ -251,9 +251,10 @@ async function autoSolve() {
     }
 
     if (data.cells) {
-        data.cells.forEach(cell => {
+        for (const cell of data.cells) {
             updateCell(cell.r, cell.c, cell.clue);
-        });
+            await new Promise(resolve => setTimeout(resolve, 160));
+        }
     }
 
     if (data.game_over) {
